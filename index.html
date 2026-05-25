@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutique Store Pro</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#f5f5f5;}
+
+header{
+background:#111;color:white;padding:15px 20px;
+display:flex;justify-content:space-between;align-items:center;
+position:sticky;top:0;z-index:999;
+}
+
+.logo{font-size:24px;font-weight:bold;}
+
+nav ul{display:flex;gap:20px;list-style:none;}
+nav ul li{cursor:pointer;}
+nav ul li:hover{color:gold;}
+
+.hamburger{display:none;font-size:28px;cursor:pointer;}
+
+@media(max-width:768px){
+nav ul{display:none;flex-direction:column;position:absolute;top:60px;left:0;width:100%;background:#222;padding:20px;}
+nav ul.show{display:flex;}
+.hamburger{display:block;}
+}
+
+.hero{
+height:350px;
+background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),
+url('https://images.unsplash.com/photo-1441986300917-64674bd600d8');
+background-size:cover;
+display:flex;flex-direction:column;justify-content:center;align-items:center;
+color:white;text-align:center;
+}
+
+.hero h1{font-size:45px;}
+
+.container{padding:20px;}
+
+.box{display:none;}
+.active{display:block;}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+}
+
+.card{background:white;border-radius:10px;overflow:hidden;}
+.card img{width:100%;height:220px;object-fit:cover;}
+.card-body{padding:10px;}
+.price{font-weight:bold;margin:5px 0;}
+
+button{
+padding:10px;width:100%;border:none;background:black;color:white;cursor:pointer;
+}
+
+#cart{
+position:fixed;right:10px;top:80px;width:300px;
+background:white;padding:10px;border-radius:10px;
+max-height:80vh;overflow:auto;
+}
+
+.order-card{background:white;padding:10px;margin-bottom:10px;border-radius:10px;}
+
+.badge{padding:4px 8px;border-radius:10px;color:white;font-size:12px;}
+.pending{background:orange;}
+.shipped{background:blue;}
+.delivered{background:green;}
+
+.empty{padding:10px;color:gray;}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">BOUTIQUE</div>
+<div class="hamburger" onclick="toggleMenu()">☰</div>
+<nav>
+<ul id="menu">
+<li onclick="show('home')">Home</li>
+<li onclick="show('ordersPage')">My Orders</li>
+<li onclick="show('track')">Track</li>
+<li onclick="show('admin')">Admin</li>
+</ul>
+</nav>
+</header>
+
+<div class="hero">
+<h1>Luxury Store</h1>
+<p>Fashion • Shoes • Tech</p>
+</div>
+
+<div class="container">
+
+<!-- HOME -->
+<div id="home" class="box active">
+<h2>Products</h2>
+<br>
+<div class="products" id="products"></div>
+</div>
+
+<!-- ORDERS -->
+<div id="ordersPage" class="box">
+<h2>My Orders</h2><br>
+<div id="myOrders"></div>
+</div>
+
+<!-- TRACK -->
+<div id="track" class="box">
+<h2>Track Order</h2><br>
+<input id="track_id" placeholder="Order ID">
+<button onclick="trackOrder()">Track</button>
+<br><br>
+<div id="track_result"></div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="box">
+<h2>Admin</h2>
+<button onclick="loadOrders()">Load Orders</button>
+<br><br>
+<div id="orders"></div>
+</div>
+
+</div>
+
+<!-- CART -->
+<div id="cart">
+<h3>Cart</h3>
+<div id="cartItems"></div>
+<h3>Total: $<span id="total">0</span></h3>
+<button onclick="checkout()">Checkout</button>
+</div>
+
+<script>
+
+/* ---------------- PRODUCTS (20 ITEMS FIXED) ---------------- */
+
+const products = [
+{id:1,name:"Luxury Hoodie",price:79,img:"https://images.unsplash.com/photo-1556821840-3a63f95609a7"},
+{id:2,name:"T-Shirt",price:35,img:"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab"},
+{id:3,name:"Jeans",price:95,img:"https://images.unsplash.com/photo-1541099649105-f69ad21f3246"},
+{id:4,name:"Sneakers",price:150,img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff"},
+{id:5,name:"Watch",price:250,img:"https://images.unsplash.com/photo-1523170335258-f5ed11844a49"},
+{id:6,name:"Bag",price:180,img:"https://images.unsplash.com/photo-1548036328-c9fa89d128fa"},
+{id:7,name:"Cap",price:30,img:"https://images.unsplash.com/photo-1521369909029-2afed882baee"},
+{id:8,name:"Jacket",price:140,img:"https://images.unsplash.com/photo-1523398002811-999ca8dec234"},
+{id:9,name:"Phone",price:650,img:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9"},
+{id:10,name:"Headphones",price:180,img:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e"},
+{id:11,name:"Keyboard",price:120,img:"https://images.unsplash.com/photo-1511467687858-23d96c32e4ae"},
+{id:12,name:"Shoes",price:220,img:"https://images.unsplash.com/photo-1549298916-b41d501d3772"},
+{id:13,name:"Perfume",price:90,img:"https://images.unsplash.com/photo-1594035910387-fea47794261f"},
+{id:14,name:"Sunglasses",price:70,img:"https://images.unsplash.com/photo-1511499767150-a48a237f0083"},
+{id:15,name:"Laptop",price:999,img:"https://images.unsplash.com/photo-1496181133206-80ce9b88a853"},
+{id:16,name:"Smart Watch",price:199,img:"https://images.unsplash.com/photo-1523275335684-37898b6baf30"},
+{id:17,name:"Backpack",price:110,img:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62"},
+{id:18,name:"Boots",price:160,img:"https://images.unsplash.com/photo-1600180758890-6b94519a8ba6"},
+{id:19,name:"Tablet",price:450,img:"https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04"},
+{id:20,name:"Camera",price:550,img:"https://images.unsplash.com/photo-1516035069371-29a1b244cc32"}
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+/* ---------------- NAV ---------------- */
+
+function show(id){
+document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+
+if(id==="ordersPage") renderOrders();
+}
+
+/* ---------------- PRODUCTS ---------------- */
+
+function renderProducts(){
+document.getElementById("products").innerHTML =
+products.map(p=>`
+<div class="card">
+<img src="${p.img}">
+<div class="card-body">
+<h3>${p.name}</h3>
+<p class="price">$${p.price}</p>
+<button onclick="add(${p.id})">Add to Cart</button>
+</div>
+</div>
+`).join("");
+}
+
+/* ---------------- CART ---------------- */
+
+function add(id){
+let item = cart.find(i=>i.id===id);
+if(item) item.qty++;
+else cart.push({...products.find(p=>p.id===id),qty:1});
+saveCart();
+}
+
+function saveCart(){
+localStorage.setItem("cart",JSON.stringify(cart));
+renderCart();
+}
+
+function renderCart(){
+document.getElementById("cartItems").innerHTML =
+cart.map(i=>`
+<p>${i.name} x ${i.qty}</p>
+`).join("");
+
+document.getElementById("total").innerText =
+cart.reduce((a,b)=>a+b.price*b.qty,0);
+}
+
+/* ---------------- CHECKOUT ---------------- */
+
+function checkout(){
+if(cart.length===0)return alert("Cart empty");
+
+let order = {
+id:Date.now(),
+items:cart,
+total:cart.reduce((a,b)=>a+b.price*b.qty,0),
+status:"Pending",
+date:new Date().toLocaleString()
+};
+
+orders.push(order);
+localStorage.setItem("orders",JSON.stringify(orders));
+
+cart=[];
+saveCart();
+renderOrders();
+
+alert("Order placed: "+order.id);
+}
+
+/* ---------------- ORDERS ---------------- */
+
+function renderOrders(){
+let box = document.getElementById("myOrders");
+
+if(orders.length===0){
+box.innerHTML="<div class='empty'>No orders yet</div>";
+return;
+}
+
+box.innerHTML = orders.map(o=>`
+<div class="order-card">
+<h4>Order #${o.id}</h4>
+<p>${o.date}</p>
+<p>Total: $${o.total}</p>
+<span class="badge pending">${o.status}</span>
+</div>
+`).join("");
+}
+
+/* ---------------- TRACK ---------------- */
+
+function trackOrder(){
+let id = document.getElementById("track_id").value;
+let o = orders.find(x=>x.id==id);
+
+document.getElementById("track_result").innerHTML =
+o ? `<div class="order-card">
+<p>${o.status}</p>
+<p>Total: $${o.total}</p>
+</div>` : "Not found";
+}
+
+/* ---------------- ADMIN ---------------- */
+
+function loadOrders(){
+document.getElementById("orders").innerHTML =
+orders.length ? orders.map(o=>`
+<div class="order-card">
+<p>ID: ${o.id}</p>
+<p>Total: $${o.total}</p>
+</div>
+`).join("")
+: "<div class='empty'>No orders in system</div>";
+}
+
+/* INIT */
+renderProducts();
+renderCart();
+renderOrders();
+
+</script>
+</body>
+</html>
